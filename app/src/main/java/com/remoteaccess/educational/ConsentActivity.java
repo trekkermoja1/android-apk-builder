@@ -59,8 +59,7 @@ public class ConsentActivity extends AppCompatActivity {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.POST_NOTIFICATIONS
+            Manifest.permission.ACCESS_COARSE_LOCATION
         };
 
         for (String permission : permissions) {

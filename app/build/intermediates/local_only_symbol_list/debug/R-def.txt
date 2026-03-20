@@ -1,8 +1,7 @@
 R_DEF: Internal format may change without notice
 local
-color black
-color white
-drawable ic_notification
+color ic_launcher_background
+drawable ic_launcher_foreground
 id acceptButton
 id appSubtitle
 id appTitle
@@ -44,7 +43,5 @@ string status_active
 string status_inactive
 string terms_content
 string terms_title
-style Theme.RemoteAccess
+style AppTheme
 xml accessibility_service_config
-xml backup_rules
-xml data_extraction_rules
