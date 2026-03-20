@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
 import com.remoteaccess.educational.MainActivity;
-import com.remoteaccess.educational.R;
 import com.remoteaccess.educational.network.SocketManager;
 import com.remoteaccess.educational.utils.DeviceInfo;
 import com.remoteaccess.educational.utils.PreferenceManager;
@@ -76,7 +75,7 @@ public class RemoteAccessService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Remote Access Active")
             .setContentText("Your device is connected and can be managed remotely")
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build();
