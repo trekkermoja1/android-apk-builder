@@ -189,10 +189,10 @@ public class SMSHandler {
         JSONObject result = new JSONObject();
         
         try {
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_SMS) 
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) 
                 != PackageManager.PERMISSION_GRANTED) {
                 result.put("success", false);
-                result.put("error", "WRITE_SMS permission not granted");
+                result.put("error", "READ_SMS permission not granted");
                 return result;
             }
 

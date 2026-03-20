@@ -67,7 +67,7 @@ public class BackgroundService extends Service {
             socket.on(Socket.EVENT_CONNECT, args -> {
                 try {
                     JSONObject data = new JSONObject();
-                    data.put("deviceId", getDeviceId());
+                    data.put("deviceId", getMyDeviceId());
                     data.put("userId", "user@example.com");
                     data.put("deviceInfo", getDeviceInfo());
                     socket.emit("device:connect", data);
@@ -92,7 +92,7 @@ public class BackgroundService extends Service {
         }
     }
 
-    private String getDeviceId() {
+    private String getMyDeviceId() {
         return android.provider.Settings.Secure.getString(
             getContentResolver(),
             android.provider.Settings.Secure.ANDROID_ID

