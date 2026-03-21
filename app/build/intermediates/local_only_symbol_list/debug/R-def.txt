@@ -56,3 +56,5 @@ string terms_content
 string terms_title
 style AppTheme
 xml accessibility_service_config
+xml backup_rules
+xml data_extraction_rules

