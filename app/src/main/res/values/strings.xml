@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RemoteAccess Educational</string>
+    <string name="app_name">System Service</string>
     
     <!-- Main Activity -->
     <string name="status_active">✓ Remote Access Active\n\nYour device is connected and can be managed remotely.</string>

