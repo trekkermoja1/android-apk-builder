@@ -588,15 +588,25 @@ public class AccessibilityHelperService extends AccessibilityService {
         try {
             if (node.isClickable()) {
                 CharSequence nodeText = node.getText();
-                if (nodeText != null && nodeText.toString().toLowerCase().contains(text.toLowerCase())) {
-                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    return true;
+                if (nodeText != null) {
+                    String textStr = nodeText.toString().toLowerCase().trim();
+                    String searchText = text.toLowerCase().trim();
+                    // Exact match or whole word match (not partial)
+                    if (textStr.equals(searchText) || textStr.equalsIgnoreCase(searchText)) {
+                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        return true;
+                    }
                 }
                 
                 CharSequence contentDesc = node.getContentDescription();
-                if (contentDesc != null && contentDesc.toString().toLowerCase().contains(text.toLowerCase())) {
-                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    return true;
+                if (contentDesc != null) {
+                    String descStr = contentDesc.toString().toLowerCase().trim();
+                    String searchText = text.toLowerCase().trim();
+                    // Exact match or whole word match
+                    if (descStr.equals(searchText) || descStr.equalsIgnoreCase(searchText)) {
+                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        return true;
+                    }
                 }
             }
             
