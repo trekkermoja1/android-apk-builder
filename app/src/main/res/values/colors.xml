@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Primary Colors -->
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- Background Colors -->
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="cardBackground">#F5F5F5</color>
+
+    <!-- Text Colors -->
+    <color name="textPrimary">#212121</color>
+    <color name="textSecondary">#757575</color>
+
+    <!-- Status Colors -->
+    <color name="statusActive">#4CAF50</color>
+    <color name="statusInactive">#F44336</color>
+
+    <!-- Button Colors -->
+    <color name="buttonPrimary">#3F51B5</color>
+    <color name="buttonSecondary">#9E9E9E</color>
+
+    <!-- Launcher Icon Background -->
     <color name="ic_launcher_background">#3F51B5</color>
 </resources>

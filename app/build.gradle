@@ -6,12 +6,16 @@ android {
     namespace 'com.remoteaccess.educational'
     compileSdk 34
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId "com.remoteaccess.educational"
         minSdk 24
         targetSdk 34
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,15 +27,29 @@ android {
             keyAlias "androiddebugkey"
             keyPassword "android"
         }
+        release {
+            storeFile file("release.keystore")
+            storePassword "android"
+            keyAlias "releasekey"
+            keyPassword "android"
+        }
     }
 
     buildTypes {
         debug {
+            minifyEnabled false
+            debuggable true
             signingConfig signingConfigs.debug
+            buildConfigField "boolean", "ENABLE_LOGGING", "true"
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
+            jniDebuggable false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean", "ENABLE_LOGGING", "false"
         }
     }
     

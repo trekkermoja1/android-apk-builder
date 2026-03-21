@@ -1,6 +1,17 @@
 R_DEF: Internal format may change without notice
 local
+color backgroundColor
+color buttonPrimary
+color buttonSecondary
+color cardBackground
+color colorAccent
+color colorPrimary
+color colorPrimaryDark
 color ic_launcher_background
+color statusActive
+color statusInactive
+color textPrimary
+color textSecondary
 drawable ic_launcher_foreground
 id acceptButton
 id appSubtitle

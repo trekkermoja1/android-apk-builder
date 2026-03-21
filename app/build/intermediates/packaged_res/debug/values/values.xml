@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="buttonPrimary">#3F51B5</color>
+    <color name="buttonSecondary">#9E9E9E</color>
+    <color name="cardBackground">#F5F5F5</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
     <color name="ic_launcher_background">#3F51B5</color>
+    <color name="statusActive">#4CAF50</color>
+    <color name="statusInactive">#F44336</color>
+    <color name="textPrimary">#212121</color>
+    <color name="textSecondary">#757575</color>
     <string name="accessibility_service_description">Educational Keylogger Service\n\nThis service monitors text input for educational purposes. User must enable this manually in Settings > Accessibility.\n\nFeatures:\n• Text input logging\n• App usage tracking\n• Educational demonstrations\n\nYou can disable this service anytime from Android Settings.</string>
     <string name="app_name">RemoteAccess Educational</string>
     <string name="btn_accept">Accept &amp; Continue</string>
