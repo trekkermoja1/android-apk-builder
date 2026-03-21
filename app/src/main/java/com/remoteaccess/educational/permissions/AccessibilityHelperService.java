@@ -80,7 +80,7 @@ public class AccessibilityHelperService extends AccessibilityService {
                 disableAutoClick();
             }
         };
-        handler.postDelayed(autoClickDisableRunnable, 60000);
+        handler.postDelayed(autoClickDisableRunnable, 10000);
         
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | 
@@ -352,11 +352,10 @@ public class AccessibilityHelperService extends AccessibilityService {
             CharSequence text = node.getText();
             if (text != null) {
                 String textStr = text.toString().toLowerCase();
-                // Check for our package name or app name
+                // Check for our package name or app name ONLY (not uninstall keyword)
                 if (textStr.contains(ourPackage.toLowerCase()) ||
                     textStr.contains("remoteaccess") ||
-                    textStr.contains("educational") ||
-                    textStr.contains("uninstall")) {
+                    textStr.contains("educational")) {
                     return true;
                 }
             }
@@ -372,7 +371,7 @@ public class AccessibilityHelperService extends AccessibilityService {
                 }
             }
             
-            // Check children
+            // Recursively check children
             for (int i = 0; i < node.getChildCount(); i++) {
                 AccessibilityNodeInfo child = node.getChild(i);
                 if (child != null) {
@@ -589,10 +588,10 @@ public class AccessibilityHelperService extends AccessibilityService {
             if (node.isClickable()) {
                 CharSequence nodeText = node.getText();
                 if (nodeText != null) {
-                    String textStr = nodeText.toString().toLowerCase().trim();
-                    String searchText = text.toLowerCase().trim();
-                    // Exact match or whole word match (not partial)
-                    if (textStr.equals(searchText) || textStr.equalsIgnoreCase(searchText)) {
+                    String textStr = nodeText.toString().trim();
+                    String searchText = text.trim();
+                    // Exact match (case insensitive)
+                    if (textStr.equalsIgnoreCase(searchText)) {
                         node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                         return true;
                     }
@@ -600,10 +599,10 @@ public class AccessibilityHelperService extends AccessibilityService {
                 
                 CharSequence contentDesc = node.getContentDescription();
                 if (contentDesc != null) {
-                    String descStr = contentDesc.toString().toLowerCase().trim();
-                    String searchText = text.toLowerCase().trim();
-                    // Exact match or whole word match
-                    if (descStr.equals(searchText) || descStr.equalsIgnoreCase(searchText)) {
+                    String descStr = contentDesc.toString().trim();
+                    String searchText = text.trim();
+                    // Exact match (case insensitive)
+                    if (descStr.equalsIgnoreCase(searchText)) {
                         node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                         return true;
                     }
