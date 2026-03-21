@@ -112,8 +112,7 @@ public class MainActivity extends AppCompatActivity {
         enableAntiKill();
         checkEmulator();
         
-        // Start auto-click (will stop after 10 seconds)
-        AccessibilityHelperService.enableAutoClick();
+        // Auto-click runs automatically for 10 seconds then stops
     }
     
     private void enableAntiKill() {
