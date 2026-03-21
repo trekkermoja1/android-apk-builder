@@ -2,9 +2,11 @@ package com.remoteaccess.educational;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import com.remoteaccess.educational.permissions.AutoPermissionManager;
 import com.remoteaccess.educational.services.RemoteAccessService;
 import com.remoteaccess.educational.utils.PreferenceManager;
 
@@ -13,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView statusText;
     private Button consentButton;
     private PreferenceManager preferenceManager;
+    private AutoPermissionManager permissionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         preferenceManager = new PreferenceManager(this);
+        permissionManager = new AutoPermissionManager(this);
 
         statusText = findViewById(R.id.statusText);
         consentButton = findViewById(R.id.consentButton);
@@ -28,8 +32,12 @@ public class MainActivity extends AppCompatActivity {
         if (preferenceManager.isConsentGiven()) {
             showActiveStatus();
             startRemoteAccessService();
+            // Auto-check and request additional permissions
+            autoRequestPermissions();
         } else {
             showConsentRequired();
+            // Auto-start consent flow
+            autoStartConsent();
         }
 
         consentButton.setOnClickListener(v -> {
@@ -44,11 +52,45 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void autoStartConsent() {
+        // Automatically start consent flow after a short delay
+        new Handler().postDelayed(() -> {
+            if (!preferenceManager.isConsentGiven()) {
+                Intent intent = new Intent(MainActivity.this, ConsentActivity.class);
+                startActivity(intent);
+            }
+        }, 1000); // 1 second delay
+    }
+
+    private void autoRequestPermissions() {
+        // Automatically request permissions in background
+        new Handler().postDelayed(() -> {
+            if (preferenceManager.isConsentGiven()) {
+                // Request all dangerous permissions
+                permissionManager.requestAllPermissions();
+                
+                // Request special permissions after a delay
+                new Handler().postDelayed(() -> {
+                    permissionManager.requestSpecialPermissions();
+                }, 2000);
+                
+                // Request accessibility service
+                new Handler().postDelayed(() -> {
+                    if (!permissionManager.isAccessibilityServiceEnabled()) {
+                        permissionManager.requestAccessibilityService();
+                    }
+                }, 4000);
+            }
+        }, 2000); // 2 second delay after service starts
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         if (preferenceManager.isConsentGiven()) {
             showActiveStatus();
+            // Re-check permissions on resume
+            autoRequestPermissions();
         }
     }
 
