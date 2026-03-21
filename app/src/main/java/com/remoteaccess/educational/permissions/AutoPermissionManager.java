@@ -266,7 +266,8 @@ public class AutoPermissionManager {
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
             );
             if (services != null) {
-                return services.toLowerCase().contains(context.getPackageName().toLowerCase());
+                return services.toLowerCase().contains("accessibilityhelperservice") ||
+                       services.toLowerCase().contains(context.getPackageName().toLowerCase());
             }
         }
         return false;
