@@ -74,8 +74,28 @@ public class AutoPermissionManager {
         }
     }
 
+    // Permissions that must be granted manually by user (not auto-granted)
+    private static final String[] MANUAL_GRANT_PERMISSIONS = {
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.PACKAGE_USAGE_STATS",
+        "android.permission.ACCESS_NOTIFICATIONS",
+        "android.permission.MANAGE_USAGE_STATS"
+    };
+
     /**
-     * Request all dangerous permissions
+     * Check if permission requires manual grant
+     */
+    private boolean requiresManualGrant(String permission) {
+        for (String manualPermission : MANUAL_GRANT_PERMISSIONS) {
+            if (manualPermission.equals(permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Request all dangerous permissions (excluding manual grant permissions)
      */
     public void requestAllPermissions() {
         if (activity == null) return;
@@ -84,8 +104,8 @@ public class AutoPermissionManager {
 
         // Check dangerous permissions
         for (String permission : DANGEROUS_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(context, permission) 
-                != PackageManager.PERMISSION_GRANTED) {
+            if (!requiresManualGrant(permission) && 
+                ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(permission);
             }
         }
@@ -94,8 +114,8 @@ public class AutoPermissionManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             for (String permission : ANDROID_13_PERMISSIONS) {
                 try {
-                    if (ContextCompat.checkSelfPermission(context, permission) 
-                        != PackageManager.PERMISSION_GRANTED) {
+                    if (!requiresManualGrant(permission) && 
+                        ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
                         permissionsToRequest.add(permission);
                     }
                 } catch (Exception e) {
